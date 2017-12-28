@@ -10,6 +10,7 @@ import java.util.stream.*;
 
 import javafx.scene.image.*;
 import javafx.scene.paint.Color;
+import javafx.util.*;
 import tMethods.TMath;
 import tMethods.TMath.LoopModes;
 import tPoints.*;
@@ -210,34 +211,80 @@ public class TColorsFX {
 		return sorted;
 	}
 
-	public static void main(String args[]) {
-		File file = new File("/Users/default/Downloads/colors.jpg");
-		BufferedImage image = null;
-		try {
-			image = ImageIO.read(file);
-		} catch (IOException e) {
-			e.printStackTrace();
+	public static class ColorFreqItem {
+		private double totalR;
+		private double totalG;
+		private double totalB;
+		private float avgR;
+		private float avgG;
+		private float avgB;
+		private int freq;
+
+		public double getDifference(Color c) {
+			return (Math.pow(c.getRed() - avgR, 2) +
+					Math.pow(c.getGreen() - avgG, 2) +
+					Math.pow(c.getBlue() - avgB, 2));
 		}
-		long t = System.currentTimeMillis();
-		List<Color> colors = getColorPalette(image, 0.4, 2, 32);
-		System.out.println(System.currentTimeMillis() - t);
-		for (Color c : colors) {
-			System.out.println((c.getRed() * 1) + ", " + (c.getGreen() * 1) + ", " + (c.getBlue() * 1));
+
+		public void mergeColor(Color c) {
+			freq++;
+			totalR += c.getRed();
+			totalG += c.getGreen();
+			totalB += c.getBlue();
+			avgR = (float) (totalR / freq);
+			avgG = (float) (totalG / freq);
+			avgB = (float) (totalB / freq);
+		}
+
+		public ColorFreqItem(Color color) {
+			this.avgR = (float) color.getRed();
+			this.avgG = (float) color.getGreen();
+			this.avgB = (float) color.getBlue();
+			totalR = avgR;
+			totalG = avgG;
+			totalB = avgB;
+			this.freq = 1;
 		}
 	}
 
-//	final public static float getVibrancy(Color c){
-//		//TODO - colors are vibrant when 1 or 2 RGB values are high, but not the third
-//		//min(r,g,b) < (150?)
-//		//max(r,g,b) > (200?)
-//
-//		// maybe split into HSL?
-//			// any Hue
-//			// high Saturation ~(90:100)
-//			// middle Luminance (~45:60)
-//	}
+	public static List<Pair<Color, Integer>> getColorPaletteFast(javafx.scene.image.Image img, double colorDiffThreshold) {
+		PixelReader reader = img.getPixelReader();
+		if (reader == null) {
+			return new ArrayList<>();
+		}
 
-	final public static List<Color> getColorPalette(BufferedImage img, double fudging, int precision, int max) {
+		int w = (int) img.getWidth();
+		int h = (int) img.getHeight();
+		int precision = 1;
+		List<ColorFreqItem> colors = new ArrayList<>();
+
+		for (int x = 0; x < w; x += precision) {
+			for (int y = 0; y < h; y += precision) {
+				Color pxColor = reader.getColor(x, y);
+				ColorFreqItem closestMatch = null;
+				double smallestDif = colorDiffThreshold;
+				for (ColorFreqItem item : colors) {
+					double dif = item.getDifference(pxColor);
+					if (dif < smallestDif) {
+						smallestDif = dif;
+						closestMatch = item;
+					}
+				}
+				if (closestMatch == null) {
+					colors.add(new ColorFreqItem(pxColor));
+				} else {
+					closestMatch.mergeColor(pxColor);
+				}
+			}
+		}
+
+		colors.sort(Comparator.comparingInt(a -> -a.freq));
+
+		return (colors.stream().map((item) -> new Pair<>(Color.color(item.avgR, item.avgG, item.avgB, 0.8), item.freq)).collect(Collectors.toList()));
+	}
+
+
+	final public static List<Color> getColorPaletteUnbiased(BufferedImage img, double fudging, int precision, int max) {
 		List<Map.Entry<Color, Integer>> colorEntries = new ArrayList(getColorMap(img, precision).entrySet());
 
 		Map<Color, Integer> fudgedColorMap = new HashMap<>();
