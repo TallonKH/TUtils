@@ -10,6 +10,7 @@ import java.util.*;
  * eg: <code>values{@value #pair}{@value #open}a{@value #pair}alice, b{@value #pair}bob, x{@value #pair}{@value #open}A{@value #sep} B{@value #sep} C{@value #close}{@value #close}</code>
  * @author Tallon Hodgeop
  */
+@SuppressWarnings({"WeakerAccess", "unused"})
 public class TFiles {
 
 	public static void main(String args[]){
@@ -113,15 +114,6 @@ public class TFiles {
 	}
 
 	/**
-	 * Creates a String representation of an array of Objects
-	 * <br>
-	 * The inverse of {@link #parseArray(String)}
-	 */
-	public void composeArray(Object[] arr){
-		composeList(Arrays.asList(arr));
-	}
-	
-	/**
 	 * Creates a String representation of a List of Objects
 	 * <br>
 	 * The inverse of {@link #parseList(String)}
@@ -179,7 +171,7 @@ public class TFiles {
 	}
 
 	public static Map<String, String> parseMap(String arr, int maxDepth) {
-		Map<String, String> map = new LinkedHashMap<String, String>();
+		Map<String, String> map = new LinkedHashMap<>();
 		List<String> ls = parseList(arr, maxDepth);
 		for (String entry : ls) {
 			map.put(getKey(entry), getVal(entry));
@@ -198,22 +190,14 @@ public class TFiles {
 		return parseList(arr, 1);
 	}
 
-	/**
-	 * Parses an array from a String
-	 * <br>
-	 * The inverse of {@link #composeArray(Object[])}
-	 */
-	public static String[] parseArray(				String arr){
-		return (String[]) parseList(arr).toArray();
-	}
-	
 	public static List<String> parseList(String arr, int maxDepth) {
-		List<String> vals = new ArrayList<String>();
+		List<String> vals = new ArrayList<>();
 		StringBuilder currentVal = new StringBuilder();
 		int depth = 0;
 		boolean inString = false;
+		char[] strChars = arr.toCharArray();
 		for (int i = 0; i < arr.length(); i++) {
-			char c = arr.charAt(i);
+			char c = strChars[i];
 			switch (c) {
 			case open:
 				if (!inString) {

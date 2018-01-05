@@ -1,74 +1,53 @@
 package tMethods;
 
-import java.util.ArrayList;
-import java.util.Random;
+import java.util.*;
 import java.lang.reflect.*;
 
 /**
  * This class contains miscellaneous static methods
- * @author Tallon Hodge
  *
+ * @author Tallon Hodge
  */
 public class TUtil {
 	static Random rand = new Random();
-	/**
-	 * Shuffles the items in an arraylist in-place.
-	 * <p>Implements Fisher-Yates shuffle.
-	 * @param items
-	 */
-	public static void shuffle(ArrayList<Object> items){
-		for(int i=items.size()-1; i>1; i--){
-			Object c = items.get(i);
-			int r = rand.nextInt(i+1);
-			items.set(i, items.get(r));
-			items.set(r, c);
-		}
-	}
 
-	/**
-	 * Shuffles the items in an array in-place.
-	 * <p>Implements Fisher-Yates shuffle.
-	 * @param items
-	 */
-	public static void shuffle(Object[] items){
-		for(int i=items.length-1; i>1; i--){
-			Object c = items[i];
-			int r = rand.nextInt(i+1);
-			items[i] = items[r];
-			items[r] = c;
-		}
-	}
-
-	/**
-	 *
-	 * @return
-	 * @return an array of the values of a field from an array of objects
-	 */
-	public Object[] fieldArray(Class<?> objType, Object[] array, String fieldName){
-		int l=array.length;
-		Object[] vals = new Object[l];
-		try {
-			Field f = objType.getField(fieldName);
-			for(int i=0; i<l; i++){
-				vals[i] = (f.get(array[i]));
+	public static List<String> quickSplit(String str, char c) {
+		List<String> vals = new ArrayList<>();
+		int prev = 0;
+		int next = 0;
+		char[] chars = str.toCharArray();
+		for (; next < str.length(); next++) {
+			if (chars[next] == c) {
+				vals.add(str.substring(prev, next));
+				next += 1;
+				prev = next;
 			}
-		} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
-			e.printStackTrace();
 		}
+		vals.add(str.substring(prev));
 		return vals;
 	}
 
 	/**
+	 * Shuffles the items in a list in-place.
+	 * <p>Implements Fisher-Yates shuffle.
 	 *
-	 * @return an arraylist of the values of a field from an arraylist of objects
+	 * @param items
 	 */
-	public ArrayList<?> fieldArrayList(Class<?> objType, ArrayList<?> array, String fieldName){
-		int l = array.size();
-		ArrayList<Object> vals = new ArrayList<Object>();
+	public static void shuffle(List<Object> items) {
+		for (int i = items.size() - 1; i > 1; i--) {
+			Object c = items.get(i);
+			items.set(i, items.set(rand.nextInt(i + 1), c));
+		}
+	}
+
+	/**
+	 * @return a list of the values of a field from an Iterable of objects
+	 */
+	public <T, K> List<K> fieldList(Iterable<T> list, String fieldName, Class<K> fieldType) {
+		List<K> vals = new ArrayList<>();
 		try {
-			Field f = objType.getField(fieldName);
-			for(int i=0; i<l; i++){
-				vals.add(f.get(array.get(i)));
+			for (T obj : list) {
+				vals.add((K) obj.getClass().getField(fieldName).get(obj));
 			}
 		} catch (NoSuchFieldException | SecurityException | IllegalArgumentException | IllegalAccessException e) {
 			e.printStackTrace();
